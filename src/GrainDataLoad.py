@@ -7,8 +7,8 @@ def load_data(url):
     train = df[:].values.tolist()
     train = np.array(train)
     for i in range(200):
-       m1 =  random.randint(0,135)
-       m2 = random.randint(0,135)
+       m1 =  random.randint(0,100)
+       m2 = random.randint(0,100)
        train[[m1, m2], :] = train[[m2, m1], :]
     y = train[:, -1]
 
@@ -17,7 +17,7 @@ def load_data(url):
     x_train = train_data[0:100].copy()
     x_test = train_data[100:].copy()
     y_train = y[0:100].copy()
-    print(y_train)
+    print(x_train)
     y_test = y[100:].copy()
-    print(train)
+    #print(train)
     return x_train, y_train, x_test, y_test

@@ -1,47 +1,42 @@
-import loadData as loader
+import GrainDataLoad as loader
 from sklearn.neural_network import MLPClassifier
 from sklearn import preprocessing
 import matplotlib.pyplot as plt
 
 
-x_train, y_train, x_test, y_test = loader.load_data("../res/readout7.xls")
+x_train, y_train, x_test, y_test = loader.load_data("../res/savedata1.xls")
 
 Y_index = []
 x_train = preprocessing.scale(x_train)
 x_test = preprocessing.scale(x_test)
 d = {}
-ha = []
 
 for Y in range(3, 20):
-    model = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(Y,), random_state=1, max_iter=100000,
+    model = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(Y,), random_state=1, max_iter=100000,
                           momentum=0.9,
                           activation='logistic', learning_rate_init=0.001, tol=1e-5)
 
     model.fit(x_train, y_train)
-    preDiff = model.score(x_test, y_test)
-    loss = model.loss_
-    h = {
-        'loss':loss,
-        'pre':preDiff,
-        'y':Y
-    }
-    ha.append(h)
-    d[Y] = model.loss_
+
+    print(model.loss_)
+
+    # d[Y] = model.loss_
+    d[Y] = model.score(x_test, y_test)
 minY = 3
-maxPre = 0
-print(ha)
-for i in ha:
-    if i['loss']>0.1:
-        continue
-    if maxPre<i['pre']:
-        maxPre = i['pre']
-        minY = i['y']
+maxY = 3
+# minloss = 1000
 # for key in d:
 #     if minloss > d[key]:
 #         minY = key
-#
-print(minY)
-model = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(minY,), random_state=1, max_iter=100000,
+
+maxscore = 0
+for key in d:
+    if maxscore < d[key]:
+        maxY = key
+
+
+print(maxY)
+model = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(maxY,), random_state=1, max_iter=100000,
                       momentum=0.9,
                       verbose=10,
                       activation='logistic', learning_rate_init=0.001, tol=1e-5)
