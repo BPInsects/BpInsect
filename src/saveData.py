@@ -5,7 +5,7 @@ import numpy as np
 import xlwt
 import time
 
-df = pd.read_excel("../res/readout5.xls")
+df = pd.read_excel("../res/readout8.xls")
 read = df[:].values.tolist()
 read = np.array(read)
 row = df.iloc[:,0].size
@@ -23,15 +23,14 @@ print(read)
 
 workbook = xlwt.Workbook()
 sheet = workbook.add_sheet('table_message',cell_overwrite_ok=True)
-fields = ['timeGap','barnTemp','grainTemp','y']
+fields = ['timeGap','barnTemp','y']
 for field in range(0,len(fields)):
     sheet.write(0,field,fields[field])
 
 
-print(read[0][3])
 for i in range(1,row+1):
     for j in range(columns):
         trans = int(read[i-1][j])
         sheet.write(i,j, trans)
 # workbook.save(r'../res/readout.xls')
-workbook.save(r'../res/savedata1.xls')
+workbook.save(r'../res/savedata2.xls')

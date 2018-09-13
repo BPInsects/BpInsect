@@ -1,10 +1,11 @@
 import GrainDataLoad as loader
 from sklearn.neural_network import MLPClassifier
 from sklearn import preprocessing
+from saveModel import save_model
 import matplotlib.pyplot as plt
 
 
-x_train, y_train, x_test, y_test = loader.load_data("../res/savedata1.xls")
+x_train, y_train, x_test, y_test = loader.load_data("../res/savedata2.xls")
 
 Y_index = []
 x_train = preprocessing.scale(x_train)
@@ -61,3 +62,4 @@ for i in range(y_train.__len__()):
 #
 # plt.show()
 print(model.loss_)
+save_model(model,'nslk_xcbg.model')
