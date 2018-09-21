@@ -10,5 +10,12 @@ def load_model(name):
     return model
 
 def find_model(lcbm,kind):
-    name = lcbm + '_' + kind + '.model'
+    name = lcbm + '_' + kind + version+yuzhi+'.model'
+    list = dir("model");
+    for
     return load_model(name)
+
+def find_model(lcbm,kind):
+    name = lcbm + '_' + kind + version+yuzhi+'.model'
+    return load_model(name)
+

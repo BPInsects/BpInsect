@@ -1,0 +1,2 @@
+modelFileName = 'models'
+trainFileName = 'trains'

@@ -12,8 +12,15 @@
 import pyjsonrpc
 import numpy as np
 import saveModel as mu
+from modelManage import find_model,change_model,save_model,load_model
 from saveModel import find_model
 import json
+import commonVariables
+import os
+
+modelFileName = commonVariables.modelFileName
+trainFileName = commonVariables.trainFileName
+
 
 class RequestHandler(pyjsonrpc.HttpRequestHandler):
 
@@ -30,49 +37,81 @@ class RequestHandler(pyjsonrpc.HttpRequestHandler):
         print(hello)
         return dataList
 
+    @pyjsonrpc.rpcmethod
+    def readModelListByKind(self,lcbm,kind):
+        return find_model(lcbm,kind)
+
+    @pyjsonrpc.rpcmethod
+    def readModelListByLcbm(self,lcbm):
+        return find_model(lcbm)
+
+    @pyjsonrpc.rpcmethod
+    def changeModel(self,f,dataList,lcbm,kind):
+        return change_model(f,dataList,lcbm,kind)
+
+    @pyjsonrpc.rpcmethod
+    def sureChangeModel(self,name):
+        Name = name
+        Name[10] = 'b'
+        save_model(load_model(name),modelFileName+'/'+Name)
+        os.remove(modelFileName+'/'+name+'.md')
+
+    @pyjsonrpc.rpcmethod
+    def cancelChangeModel(self,name):
+        os.remove(modelFileName + '/' + name + '.md')
+
 
     @pyjsonrpc.rpcmethod
     def predict(self, lcbm,temperature,timeGap,kind):
-        model = find_model(lcbm,kind)
+        modelName = find_model(lcbm,kind)
+        f = int(modelName[-7])
+        model = load_model(modelName)
         result = {
-            "success":False,
-            "msg":"",
-            "obj":{}
+            "success": True,
+            "msg": "",
+            "obj": {
+                "kind": kind,
+                "temperature": temperature,
+                "lcbm": lcbm,
+                "danger": f,
+                "results": [{
+                    "timeGap": 1,
+                    "num": 20
+                }, {
+                    "timeGap": 2,
+                    "num": 40
+                }, {
+                    "timeGap": 3,
+                    "num": 60
+                }, {
+                    "timeGap": 4,
+                    "num": 70
+                }]
+            }
+
         }
         if model == None:
             result.success = False;
             result.msg = "没有该虫种的粮仓模型，无法预测"
             return result
         else:
-            #时间分割
-            time = []
-            num = []
-            for i in range(timeGap//5):
-                time.append(5*(i+1))
-            if (timeGap%5) != 0:
-                time.append(timeGap)
 
-            for t in time:
+            num = []
+
+            for t in timeGap:
                 num.append(model.predict(temperature,t))
 
-            obj = []
-            for j in range(time.__len__()):
-                obj[j][0]=time[j]
-                obj[j][1] = num[j]
-
             result.success = True,
-            result.obj = obj;
-            return result;
-        data ={
-            'lcbm':lcbm,
-            'temperature':temperature,
-            'timeGap':timeGap,
-            'num':20
-        }
-        print(lcbm)
+            result.msg = "成功预测"
 
-        """Test method"""
-        return data
+            for i in range(1,timeGap+1):
+                result.obj.results[i-1] = {
+                    "timeGap": i,
+                    "num": num[i-1]
+                }
+
+        return result;
+
 
     @pyjsonrpc.rpcmethod
     def test(self, t,h,m,gt,gh,at,ah):
