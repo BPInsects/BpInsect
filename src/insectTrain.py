@@ -1,7 +1,8 @@
+# coding=utf-8
 import GrainDataLoad as loader
 from sklearn.neural_network import MLPClassifier
 from sklearn import preprocessing
-from saveModel import save_model
+from modelManage import save_model
 import matplotlib.pyplot as plt
 
 
@@ -36,7 +37,7 @@ for key in d:
         maxY = key
 
 
-print(maxY)
+
 model = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(maxY,), random_state=1, max_iter=100000,
                       momentum=0.9,
                       verbose=10,
@@ -56,10 +57,9 @@ down = []
 for i in range(y_train.__len__()):
     down.append(i)
 
+fittingAccuracy = 1 - model.loss_
+predictionAccuracy = d[maxY]
 
-# plt.plot(down,y_train,label='line one')
-# plt.plot(down,model.predict(x_train),label='line two')
-#
-# plt.show()
+
 print(model.loss_)
-save_model(model,'nslk_xcbg.model')
+save_model(model,'00100100101_锈赤扁谷盗_a_2018-09-26 10:59_0.99_0.75_50.model')

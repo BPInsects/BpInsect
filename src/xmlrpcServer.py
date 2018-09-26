@@ -11,9 +11,7 @@
 
 import pyjsonrpc
 import numpy as np
-import saveModel as mu
 from modelManage import find_model,change_model,save_model,load_model
-from saveModel import find_model
 import json
 import commonVariables
 import os
@@ -31,11 +29,22 @@ class RequestHandler(pyjsonrpc.HttpRequestHandler):
     # TODO 增加查询和预测方法
     @pyjsonrpc.rpcmethod
     def allpredict(self,hello):
+        results = {
+            "success": True,
+            "msg": "",
+            "obj": []
+        }
+
         dataList = json.loads(hello)
-        for data in dataList:
-           print(data)
-        print(hello)
-        return dataList
+        if dataList != None:
+            i = 0
+            for data in dataList:
+               results.obj[i] = RequestHandler.predict(data.lcbm,data.kind)
+        else:
+            results.success = False
+            results.msg = "没有找到模型"
+
+        return results
 
     @pyjsonrpc.rpcmethod
     def readModelListByKind(self,lcbm,kind):
@@ -50,15 +59,14 @@ class RequestHandler(pyjsonrpc.HttpRequestHandler):
         return change_model(f,dataList,lcbm,kind)
 
     @pyjsonrpc.rpcmethod
-    def sureChangeModel(self,name):
-        Name = name
-        Name[10] = 'b'
-        save_model(load_model(name),modelFileName+'/'+Name)
-        os.remove(modelFileName+'/'+name+'.md')
-
-    @pyjsonrpc.rpcmethod
-    def cancelChangeModel(self,name):
-        os.remove(modelFileName + '/' + name + '.md')
+    def sureChangeModel(self,name,sure):
+        if sure == True:
+            Name = name
+            Name.split("_")[2] = 'b'
+            save_model(load_model(name),modelFileName+'/'+Name)
+            os.remove(modelFileName+'/'+name)
+        else:
+            os.remove(modelFileName + '/' + name )
 
 
     @pyjsonrpc.rpcmethod
@@ -74,19 +82,7 @@ class RequestHandler(pyjsonrpc.HttpRequestHandler):
                 "temperature": temperature,
                 "lcbm": lcbm,
                 "danger": f,
-                "results": [{
-                    "timeGap": 1,
-                    "num": 20
-                }, {
-                    "timeGap": 2,
-                    "num": 40
-                }, {
-                    "timeGap": 3,
-                    "num": 60
-                }, {
-                    "timeGap": 4,
-                    "num": 70
-                }]
+                "results": []
             }
 
         }
