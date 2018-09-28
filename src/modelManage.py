@@ -1,6 +1,5 @@
 # coding=utf-8
 import os
-import time
 import pandas as pd
 import numpy as np
 import random
@@ -9,6 +8,9 @@ from sklearn.neural_network import MLPClassifier
 from sklearn import preprocessing
 from sklearn.externals import joblib
 import commonVariables
+import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 
 modelFileName = commonVariables.modelFileName
 trainFileName = commonVariables.trainFileName
@@ -21,24 +23,22 @@ def load_model(name):
     model = joblib.load(modelFileName+'/'+name)
     return model
 
-def find_model(lcbm,kind):
+def find_model1(lcbm,kind):
     name = lcbm
     namelist = []
     modelName = None
     result = {
         "success": False,
-        "msg": "",
+        "msg": "没有模型",
         "obj": [
             {
                 "kind": kind,
                 "lcbm": lcbm,
                 "type": "",
+                "fittingAccuracy": "",
+                "predictionAccuracy": "",
                 "danger": "",
-                "modelName": "",
-                "modelTime": "",
-                "fittingAccuracy":"",
-                "predictionAccuracy":""
-
+                "modelName": ""
             }
         ]
     }
@@ -47,25 +47,26 @@ def find_model(lcbm,kind):
     for parent, dirnames, filenames in os.walk(modelFileName):
         if filenames != None:
             for filename in filenames:
-                if filename.split("_")[0] == name and filename.split("_")[1] == kind:
+                if filename.split("_")[0] == name and filename.split("_")[1].decode('utf-8') == kind.strip().decode('utf-8'):
                     namelist.append(filename)
 
-    if namelist != None:
-        result.success = True
-        result.msg = "成功找到模型"
-        i = 0
+    if namelist.__len__() > 0:
+        result['success'] = True
+        result['msg'] = "成功找到模型"
+
         for name in namelist:
-            name = name.split("_")
-            result.obj[i]={
-                "kind": name[1],
+            Name = name.split("_")
+            result['obj'].append({
                 "lcbm": lcbm,
-                "type": name[2],
-                "danger": int(name[6][0]),
+                "kind": Name[1],
+                "type": Name[2],
+                "fittingAccuracy": float(Name[3]),
+                "predictionAccuracy": float(Name[4]),
+                "danger": int(Name[5]),
                 "modelName": name,
-                "modelTime": name[3],
-                "fittingAccuracy": float(name[4]),
-                "predictionAccuracy": float(name[5])
-            }
+            })
+
+    del result['obj'][0]
 
     return result
 
@@ -76,18 +77,16 @@ def find_model(lcbm):
     namelist = []
     result = {
         "success": False,
-        "msg": "",
+        "msg": "没有模型",
         "obj": [
             {
-                "kind": "",
                 "lcbm": lcbm,
+                "kind": "",
                 "type": "",
+                "fittingAccuracy": "",
+                "predictionAccuracy": "",
                 "danger": "",
-                "modelName": "",
-                "modelTime": "",
-                "fittingAccuracy":"",
-                "predictionAccuracy":""
-
+                "modelName": ""
             }
         ]
     }
@@ -99,23 +98,23 @@ def find_model(lcbm):
                 if filename.split("_")[0] == name:
                     namelist.append(filename)
 
-    if namelist != None:
-        result.success = True
-        result.msg = "成功找到模型"
-        i = 0
+    if namelist.__len__() > 0:
+        result['success'] = True
+        result['msg'] = "成功找到模型"
         for name in namelist:
-            name = name.split("_")
-            result.obj[i]={
-                "kind": name[1],
+            Name = name.split("_")
+            print(Name)
+            result['obj'].append({
                 "lcbm": lcbm,
-                "type": name[2],
-                "danger": int(name[6][0]),
+                "kind": Name[1],
+                "type": Name[2],
+                "fittingAccuracy": float(Name[3]),
+                "predictionAccuracy": float(Name[4]),
+                "danger": int(Name[5]),
                 "modelName": name,
-                "modelTime": name[3],
-                "fittingAccuracy": float(name[4]),
-                "predictionAccuracy": float(name[5])
-            }
-            i = i + 1
+            })
+
+    del result['obj'][0]
 
     return result
 
@@ -123,14 +122,15 @@ def find_model(lcbm):
 def change_model(f, dataList, lcbm, kind):
     existDataList = []
     train = []
-    name = lcbm + '_' + kind
     for parent, dirnames, filenames in os.walk(trainFileName):
-        if filenames != None:
+        if filenames.__len__()>0:
             for filename in filenames:
-                if filenames[0,9] == name:
+                if filename.split("_")[0] == lcbm and filename.split("_")[1].decode('utf-8') == kind.strip().decode('utf-8'):
                     existDataList.append(filename)
+        else:
+            existDataList = []
     # TUDO 补充非空情况
-    if existDataList != None:
+    if existDataList.__len__()> 0:
         df = pd.read_excel(trainFileName+'/'+existDataList[-1])
         train = df[:].values.tolist()
         train = np.array(train)
@@ -186,26 +186,24 @@ def change_model(f, dataList, lcbm, kind):
                           activation='logistic', learning_rate_init=0.001, tol=1e-5)
 
 
-    time1 = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
 
-    fittingAccuracy = 1 - model.loss_
-    predictionAccuracy = max(d[Y])
-    modelList = find_model(lcbm,kind)
-    if modelList.obj.__len__() == 1:
-        preModel = modelList.obj[0]
+    fittingAccuracy = round(1 - model.loss_,2)
+    predictionAccuracy = round(max(d[Y]),2)
+    modelList = find_model1(lcbm,kind)
+    if modelList['obj'].__len__() == 1:
+        preModel = modelList['obj'][0]
     else:
-        i = 0
-        for model in modelList.obj:
-            if model.type=='b':
+        for model in modelList['obj']:
+            if model['type']=='b':
                 preModel = model
 
-    beforeFittingAccuracy = preModel.fittingAccuracy
-    beforePredictionAccuracy = preModel.predictionAccuracy
+    beforeFittingAccuracy = preModel['fittingAccuracy']
+    beforePredictionAccuracy = preModel['predictionAccuracy']
 
-    modelName =lcbm+'_'+kind+'_'+'c_'+time1+'_'+str(fittingAccuracy)+'_'+str(predictionAccuracy)+'_'+str(beforeFittingAccuracy)+'_'+str(beforePredictionAccuracy)+'_'+str(f)+'.model'
+    modelName =lcbm+'_'+kind+'_'+'c_'+str(fittingAccuracy)+'_'+str(predictionAccuracy)+'_'+str(f)
 
 
-    save_model(model,modelFileName+'/'+modelName)
+    save_model(model,modelName)
     # 此处将新的数据存储
     saveFile(train,modelName)
 
@@ -221,9 +219,9 @@ def change_model(f, dataList, lcbm, kind):
         }
     }
 
-    result.success = True
-    result.msg = "更换模型成功"
-    result.obj = {
+    result['success'] = True
+    result['msg'] = "更换模型成功"
+    result['obj'] = {
         "modelName": modelName,
         "fittingAccuracy": fittingAccuracy,
         "predictionAccuracy": predictionAccuracy,
@@ -232,7 +230,7 @@ def change_model(f, dataList, lcbm, kind):
     }
 
 
-    return modelName
+    return result
 
 
 def saveFile(datalist,name):

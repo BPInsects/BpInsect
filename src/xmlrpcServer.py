@@ -11,10 +11,11 @@
 
 import pyjsonrpc
 import numpy as np
-from modelManage import find_model,change_model,save_model,load_model
+from modelManage import find_model,change_model,save_model,load_model,find_model1
 import json
 import commonVariables
 import os
+from sklearn import preprocessing
 
 modelFileName = commonVariables.modelFileName
 trainFileName = commonVariables.trainFileName
@@ -36,23 +37,23 @@ class RequestHandler(pyjsonrpc.HttpRequestHandler):
         }
 
         dataList = json.loads(hello)
-        if dataList != None:
-            i = 0
+        if dataList!= None:
             for data in dataList:
-               results.obj[i] = RequestHandler.predict(data.lcbm,data.kind)
+               results['obj'].append(RequestHandler.predict(data['lcbm'],data['temperature'],data['timeGap'],data['kind']))
         else:
-            results.success = False
-            results.msg = "没有找到模型"
+            results['success'] = False
+            results['msg'] = "没有找到模型"
 
         return results
 
     @pyjsonrpc.rpcmethod
     def readModelListByKind(self,lcbm,kind):
-        return find_model(lcbm,kind)
+        return find_model1(lcbm,kind)
 
     @pyjsonrpc.rpcmethod
     def readModelListByLcbm(self,lcbm):
-        return find_model(lcbm)
+        value = find_model(lcbm)
+        return value
 
     @pyjsonrpc.rpcmethod
     def changeModel(self,f,dataList,lcbm,kind):
@@ -63,7 +64,7 @@ class RequestHandler(pyjsonrpc.HttpRequestHandler):
         if sure == True:
             Name = name
             Name.split("_")[2] = 'b'
-            save_model(load_model(name),modelFileName+'/'+Name)
+            save_model(load_model(name),Name)
             os.remove(modelFileName+'/'+name)
         else:
             os.remove(modelFileName + '/' + name )
@@ -71,61 +72,62 @@ class RequestHandler(pyjsonrpc.HttpRequestHandler):
 
     @pyjsonrpc.rpcmethod
     def predict(self, lcbm,temperature,timeGap,kind):
-        modelName = find_model(lcbm,kind)
-        f = int(modelName[-7])
-        model = load_model(modelName)
+
+        modelList = find_model1(lcbm, kind)
+        if modelList['obj'].__len__() == 1:
+            preModel = modelList['obj'][0]
+        else:
+            for model in modelList['obj']:
+                if model['type'] == 'b':
+                    preModel = model
+
+        f = preModel['danger']
+        model = load_model(preModel['modelName'])
         result = {
-            "success": True,
+            "success": False,
             "msg": "",
-            "obj": {
+            "obj": [{
                 "kind": kind,
                 "temperature": temperature,
                 "lcbm": lcbm,
                 "danger": f,
                 "results": []
-            }
+            }]
 
         }
         if model == None:
-            result.success = False;
-            result.msg = "没有该虫种的粮仓模型，无法预测"
+            result['success'] = False;
+            result['msg'] = "没有该虫种的粮仓模型，无法预测"
             return result
         else:
 
             num = []
+            x_test = []
 
-            for t in timeGap:
-                num.append(model.predict(temperature,t))
+            for t in range(1,timeGap+1):
+                x_test.append([temperature,t])
 
-            result.success = True,
-            result.msg = "成功预测"
+            num = model.predict(preprocessing.scale(x_test))
+            print(num)
+            result['success'] = True
+            result['msg'] = "成功预测"
 
             for i in range(1,timeGap+1):
-                result.obj.results[i-1] = {
+                result['obj'][0]['results'].append( {
                     "timeGap": i,
-                    "num": num[i-1]
-                }
+                    "num": int(num[i-1])
+                })
 
         return result;
 
 
-    @pyjsonrpc.rpcmethod
-    def test(self, t,h,m,gt,gh,at,ah):
-
-        data = [[t,h,m,gt,gh,at,ah]]
-        data = np.array(data)
-        model = mu.load_model()
-        result = model.predict(data).tolist()[0]
-
-        print(result)
-        return result
 
 
 # Threading HTTP-Server
 http_server = pyjsonrpc.ThreadingHttpServer(
-    server_address = ('localhost', 8081),
+    server_address = ('localhost', 12809),
     RequestHandlerClass = RequestHandler
 )
 print "Starting HTTP server ..."
-print "URL: http://localhost:8081"
+print "URL: http://localhost:12809"
 http_server.serve_forever()
