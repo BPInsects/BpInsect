@@ -29,6 +29,7 @@ for i in range(row):
 
 for date in range(row):
     outTime.append(time.mktime(time.strptime(read[date][0].ctime(),"%a %b %d %H:%M:%S %Y")))
+    print(type(read[date][0]))
 
 
 for i in range(row):
