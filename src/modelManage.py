@@ -284,13 +284,17 @@ def savePrimaryFile(datalist,lcbm, name):
     name = str(name).replace("b","c")
     workbook.save(trainFileName + '\\'+lcbm+"\\" + name.decode('utf-8') + '.xls')
 
-def readExcelFile(lcbm,name):
+def readExcelFile(lcbm,name,origin):
     train = []
     names = name.split("_")
+    model_type = 'b'
+    if origin:
+        model_type = 'a'
+
     for (path, dirs, files) in os.walk("trains" + "\\" + lcbm):
         for filename in files:
             filenames = filename.split("_")
-            if 'b'== filenames[2] and filenames[1] == names[1]:
+            if model_type== filenames[2] and filenames[1] == names[1]:
                 df = pd.read_excel(trainFileName+"\\"+lcbm+"\\"+filename)
                 train = df[:].values.tolist()
                 return train

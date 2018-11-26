@@ -105,12 +105,12 @@ class RequestHandler(pyjsonrpc.HttpRequestHandler):
         return result
 
     @pyjsonrpc.rpcmethod
-    def getTrainData(self, name):
+    def getTrainData(self, name,origin):
         result = {"success": False, "msg": "没有该模型数据", "obj": []}
 
         lcbm = name.split("_")[0]
         datalist = []
-        datalist = readExcelFile(lcbm, name)
+        datalist = readExcelFile(lcbm, name,origin)
         if datalist.__len__() > 0:
             result['success'] = True
             result["msg"] = "成功返回数据"
@@ -267,8 +267,8 @@ class RequestHandler(pyjsonrpc.HttpRequestHandler):
 
 # Threading HTTP-Server
 http_server = pyjsonrpc.ThreadingHttpServer(
-    server_address=('localhost', 12809),
-    RequestHandlerClass=RequestHandler)
+    server_address= ('10.101.166.74', 9999),
+    RequestHandlerClass= RequestHandler)
 print "Starting HTTP server ..."
 print "URL: http://localhost:12809"
 http_server.serve_forever()
